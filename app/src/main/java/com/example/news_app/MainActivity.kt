@@ -12,6 +12,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.news_app.databinding.ActivityMainBinding
 import com.example.news_app.ui.theme.NewsappTheme
 import com.tickaroo.tikxml.TikXml
 import com.tickaroo.tikxml.retrofit.TikXmlConverterFactory
@@ -22,6 +24,8 @@ import retrofit2.Retrofit
 
 class MainActivity : AppCompatActivity() {
 
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var newsAdapter: NewsAdapter
     private val retrofit = Retrofit.Builder()
         .baseUrl("https://news.google.com/")
         .addConverterFactory(
@@ -34,11 +38,23 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        newsAdapter = NewsAdapter()
+
+        binding.newsRecyclerView.apply{
+            layoutManager = LinearLayoutManager(this@MainActivity)
+                adapter = newsAdapter
+        }
 
         val newsService = retrofit.create(NewsService::class.java)
         newsService.mainFeed().enqueue(object: Callback<NewsRss>{
             override fun onResponse(call: Call<NewsRss>, response: Response<NewsRss>) {
                 Log.e("MainActivity","${response.body()?.channel?.items}")
+
+                newsAdapter.submitList(response.body()?.channel?.items.orEmpty())
+
             }
 
             override fun onFailure(call: Call<NewsRss>, t: Throwable) {
